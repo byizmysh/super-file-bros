@@ -1,6 +1,6 @@
-# Super File Bros. 0.1.0-rc.4
+# Super File Bros. 0.1.0
 
-English-only platform release candidate for **Super File Bros.**. A file manager for Nintendo Switch 2, using an existing qualified held FS RPC run from [ns2jb2](https://gitlab.com/BermTheSequel/ns2jb2) or [ns2jb](https://gitlab.com/kurumuz/ns2jb).
+English-only platform release for **Super File Bros.**. A file manager for Nintendo Switch 2, using an existing qualified held FS RPC run from [ns2jb2](https://gitlab.com/BermTheSequel/ns2jb2) or [ns2jb](https://gitlab.com/kurumuz/ns2jb).
 
 ## Included
 
@@ -14,11 +14,11 @@ English-only platform release candidate for **Super File Bros.**. A file manager
 
 ## Before starting
 
-Install Node.js 20.20+ (22+ recommended), extract the entire asset, establish `node run.cjs --rpc` with your chosen upstream launcher, and leave it running. The session folder is detected from saved settings or nearby ns2jb2/ns2jb runs. Enter the console IPv4 if needed; a manual folder selection remains available. Read README.md or README.ru.md for complete steps.
+Install Node.js 20.20+ (22+ recommended), extract the entire asset, establish `node run.cjs --rpc` with your chosen upstream launcher, and leave it running. The session folder is detected from saved settings or nearby ns2jb2/ns2jb runs. Enter the console IPv4 if needed; a manual folder selection remains available. Read README.md for complete steps.
 
 ## Limitations
 
-SD writes are available through the browser. Internal mounts, decoded game exports and FTP remain read-only. Only one active export is supported. Transfers require the original session and console to remain available. Downloads cannot resume after disconnection. Browser folder uploads do not enumerate empty directories. This is an experimental prerelease; current upstream requirements still apply.
+SD writes are available through the browser. Internal mounts, decoded game exports and FTP remain read-only. Only one active export is supported. Transfers require the original session and console to remain available. Downloads cannot resume after disconnection. Browser folder uploads do not enumerate empty directories. Current upstream requirements still apply.
 
 ## Safety disclaimer
 
@@ -26,9 +26,9 @@ SD writes are available through the browser. Internal mounts, decoded game expor
 
 ## Assets
 
-- `super-file-bros-0.1.0-rc.4-windows.zip` — Windows launchers and source.
-- `super-file-bros-0.1.0-rc.4-macos.zip` — macOS launchers and source.
-- `super-file-bros-0.1.0-rc.4-linux.tar.gz` — Linux scripts and source, preserving executable permissions.
+- `super-file-bros-0.1.0-windows.zip` — Windows launchers and source.
+- `super-file-bros-0.1.0-macos.zip` — macOS launchers and source.
+- `super-file-bros-0.1.0-linux.tar.gz` — Linux scripts and source, preserving executable permissions.
 - `SHA256SUMS` — checksums for all three archives.
 - `SOURCE-MANIFEST-windows.json`, `SOURCE-MANIFEST-macos.json`, `SOURCE-MANIFEST-linux.json` — per-file checksums, also included inside each package as `SOURCE-MANIFEST.json`.
 

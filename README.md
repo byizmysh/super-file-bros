@@ -8,10 +8,11 @@
 
 ## Compatibility
 
-Super File Bros. connects to a **verified, retained FS RPC session** produced by either of these projects:
+Super File Bros. connects to a **verified, retained FS RPC session**. Connection options and availability:
 
 | Launcher | Required launch mode | Instructions |
 | --- | --- | --- |
+| [IZ2S-Platform](https://github.com/byizmysh/IZ2S-Platform) | Coming in the next few days | Integration will be available in the next few days. |
 | [BermTheSequel/ns2jb2](https://gitlab.com/BermTheSequel/ns2jb2) | `node run.cjs --rpc` | Follow that project's current setup and console requirements. |
 | [kurumuz/ns2jb](https://gitlab.com/kurumuz/ns2jb) | `node run.cjs --rpc` | Follow that project's current setup and console requirements. |
 
@@ -33,9 +34,9 @@ No `npm install`, Python, compiler or administrator privileges are required to r
 
    | System | Archive |
    | --- | --- |
-   | Windows | `super-file-bros-0.1.0-rc.4-windows.zip` |
-   | macOS | `super-file-bros-0.1.0-rc.4-macos.zip` |
-   | Linux | `super-file-bros-0.1.0-rc.4-linux.tar.gz` |
+   | Windows | `super-file-bros-0.1.0-windows.zip` |
+   | macOS | `super-file-bros-0.1.0-macos.zip` |
+   | Linux | `super-file-bros-0.1.0-linux.tar.gz` |
 
    Each package includes the matching launchers, a platform-specific **START_HERE.md**, and the complete English instructions. Node.js is installed separately; these are portable source packages, not standalone native executables. They use the architecture of your installed Node.js runtime.
 2. Extract the **entire** archive to a folder you can write to. Do not start it inside the archive. Keep the folder's contents together.
@@ -150,7 +151,7 @@ npm test
 python3 tools/fs-rpc-browser/release.py
 ```
 
-The build creates separate reproducible Windows/macOS ZIPs and a Linux tar.gz, SHA-256 checksums and per-platform file manifests under `dist/super-file-bros/`. The included GitHub Actions workflow checks the source on Windows/macOS/Linux and builds the release assets. Its manual run uploads an artifact; pushing a `v*` tag also creates a **draft prerelease** for review. Review its notes, assets and disclaimer before publishing. GitHub automatically generated source archives differ from the platform release assets until you run the builder.
+The build creates separate reproducible Windows/macOS ZIPs and a Linux tar.gz, SHA-256 checksums and per-platform file manifests under `dist/super-file-bros/`. The included GitHub Actions workflow checks the source on Windows/macOS/Linux and builds the release assets. Its manual run uploads an artifact; pushing a `v*` tag also creates a **draft release** for review. Review its notes, assets and disclaimer before publishing. GitHub automatically generated source archives differ from the platform release assets until you run the builder.
 
 ## Credits and license
 
