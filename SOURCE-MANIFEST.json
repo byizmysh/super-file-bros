@@ -46,7 +46,7 @@
     "start.sh": "54b52e453c67d19194dd1e44e07e3dcb5be3ec5f00b403099ef428a4ef80195c",
     "tests/dolphin-fs-rpc.test.cjs": "8e0888c23ae79f13978b77659035f9df2e2e686d890a1dc7b85d280132124680",
     "tests/fs-rpc-browser.test.cjs": "883af8d234ed92edf81ce04fbacd8e2bb01c611f65191361e9fc915b0552268c",
-    "tests/fs-rpc-discovery.test.cjs": "98d0f5b543a17f2e3dec9c80243ecf4b61c306cad6b19c51261ebe7007304bc7",
+    "tests/fs-rpc-discovery.test.cjs": "073fcf4b79012a77971cb4de9614758603fb6d1ba66820a8c77babd80d3975c7",
     "tests/fs-rpc-downloads.test.cjs": "c49238020b389d0102c6572faaabb671f89607b3bcd9348a1520c02572f0d077",
     "tests/fs-rpc-writes.test.cjs": "9448c91038b7263b00d57414ff261d9ad59f7289200a13e7a138973f2c182f42",
     "tests/super-file-bros-release.test.cjs": "0cfdbace9e7647be0c069df754daf165317796211ca98855c933bdf6916edd20",
