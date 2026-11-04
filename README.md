@@ -150,19 +150,6 @@ To uninstall, stop the manager, remove its portable folder and delete its option
 
 The web UI listens only on `127.0.0.1` and uses a private access key. There is no cloud account, telemetry or remote control service. Settings and local export metadata are written under `data/`. Console FTP is a separate network service with the limitations above. A local private UI does not make anonymous FTP safe on an untrusted network.
 
-## Source, building and GitHub releases
-
-Each platform archive contains the runnable source tree and required static/native assets. It is also ready to use as the initial contents of a GitHub repository: include the files inside `super-file-bros/`, including hidden `.github/` and `.gitignore`, and exclude all generated `data/`, logs and captures. No repository or release is published automatically by the desktop application.
-
-Development verification requires Node.js and Python 3 (used for ZIP tests and packaging only):
-
-```sh
-npm test
-python3 tools/fs-rpc-browser/release.py
-```
-
-The build creates separate reproducible Windows/macOS ZIPs and a Linux tar.gz, a separate `super-file-bros-0.2.0-source.zip` containing the GitHub-ready source with all launchers, SHA-256 checksums and per-package file manifests under `dist/super-file-bros/`. The included GitHub Actions workflow checks the source on Windows/macOS/Linux and builds the release assets. Its manual run uploads an artifact; pushing a `v*` tag also creates a **draft release** for review. Review its notes, assets and disclaimer before publishing. The source ZIP contains no `data/`, credentials, sessions or panel runtime. Upload its inner `super-file-bros/` contents to the repository root, including hidden files. For an existing checkout, apply the source changes while keeping its `.git/` and local ignored `data/`. Use tag `v0.2.0` only after the checks pass. GitHub automatically generated source archives differ from the generated platform assets.
-
 ## Credits and license
 
 GPL-2.0-only; see [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Unmodified [OunceCake](https://github.com/misshexa66/OunceCake), revision `6fcf9e80d302ff43c96dd5d912c9b08a11913daf`, supplies decoded game exports and its console payload. Its license, payload source and build files are included. The connection projects are separate projects; their current instructions and requirements remain authoritative. Use only content and consoles you are authorized to access. No Nintendo branding or game assets are included.
