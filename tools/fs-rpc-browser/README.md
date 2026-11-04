@@ -2,7 +2,7 @@
 
 **A file manager for Nintendo Switch 2.** Browse your console and SD card, download files and ZIP folders, manage SD files, and open a read-only FTP export in your preferred file manager. Supports **SmileBASIC 4 RPC** and **experimental Civilization VII RPC**. [IZ2S Platform](https://github.com/byizmysh/IZ2S-Platform) is also supported; Super File Bros. is built into **IZ2S Platform starting with version 0.2.1**.
 
-**Standalone application.** Super File Bros. has its own launcher, connection settings and version. IZ2S Platform is optional; this package runs without its panel, modules or services. The canonical project name is **Super File Bros.**
+**Standalone application.** Super File Bros. has its own launcher, connection settings and version. IZ2S Platform is optional; this package runs without its panel, modules or services.
 
 [Safety notice](DISCLAIMER.md) · [Release notes](RELEASE_NOTES.md)
 
