@@ -1,6 +1,6 @@
 # Super File Bros.
 
-**A file manager for Nintendo Switch 2.** Browse your console and SD card, download files and ZIP folders, manage SD files, and open a read-only FTP export in your preferred file manager. Supports **SmileBASIC 4 RPC** and **experimental Civilization VII RPC**. [IZ2S Platform](https://github.com/byizmysh/IZ2S-Platform) is also supported; Super File Bros. is built into **IZ2S Platform starting with version 0.2.1**.
+**A file manager for Nintendo Switch 2.** Browse your console and SD card, download files and ZIP folders, manage SD files, and open a read-only FTP export in your preferred file manager. Supports **SmileBASIC 4 RPC**. [IZ2S Platform](https://github.com/byizmysh/IZ2S-Platform) is also supported; Super File Bros. is built into **IZ2S Platform starting with version 0.2.1**.
 
 **Standalone application.** Super File Bros. has its own launcher, connection settings and version. IZ2S Platform is optional; this package runs without its panel, modules or services.
 
@@ -68,7 +68,7 @@ node start.cjs
 
 ## First connection, step by step
 
-1. Have an active FS RPC connection from **ns2jb2** or **ns2jb** in `--rpc` mode, or through **IZ2S Platform**, and leave that connection application running. Refer to the selected project's own connection instructions. SmileBASIC 4 RPC is supported; Civilization VII RPC support is experimental.
+1. Have an active FS RPC connection from **ns2jb2** or **ns2jb** in `--rpc` mode, or through **IZ2S Platform**, and leave that connection application running. Refer to the selected project's own connection instructions. SmileBASIC 4 RPC is supported.
 2. Start Super File Bros. Its local page opens automatically. If it does not, use the private link printed in its terminal.
 3. The manager revalidates saved settings and searches nearby **ns2jb2/ns2jb** folders for active `runs/switch2-*` sessions. The detected path is filled into Connection settings. **Detect session** repeats this search.
 4. Enter **Console IPv4** if it has not been saved. If your session is stored elsewhere, enter the full **Held FS run folder** manually, for example `/path/to/ns2jb2/runs/switch2-ABC123`, then click **Connect**. Select the complete current session folder, not the repository root.
