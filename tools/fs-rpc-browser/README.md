@@ -1,6 +1,6 @@
 # Super File Bros.
 
-**A file manager for Nintendo Switch 2.** Browse your console and SD card, download files and ZIP folders, manage SD files, and open a read-only FTP export in your preferred file manager.
+**A file manager for Nintendo Switch 2.** Browse your console and SD card, download files and ZIP folders, manage SD files, and open a read-only FTP export in your preferred file manager. Supports **SmileBASIC 4 RPC** and **experimental Civilization VII RPC**. [IZ2S Platform](https://github.com/byizmysh/IZ2S-Platform) is also supported; Super File Bros. is built into **IZ2S Platform starting with version 0.2.1**.
 
 **Standalone application.** Super File Bros. has its own launcher, connection settings and version. IZ2S Platform is optional; this package runs without its panel, modules or services. The canonical project name is **Super File Bros.**
 
@@ -16,10 +16,11 @@ Super File Bros. connects to a **verified, retained FS RPC session**. Connection
 | --- | --- | --- |
 | [BermTheSequel/ns2jb2](https://gitlab.com/BermTheSequel/ns2jb2) | `node run.cjs --rpc` | Follow that project's current setup and console requirements. |
 | [kurumuz/ns2jb](https://gitlab.com/kurumuz/ns2jb) | `node run.cjs --rpc` | Follow that project's current setup and console requirements. |
+| [IZ2S Platform](https://github.com/byizmysh/IZ2S-Platform) | Active retained FS RPC session | Super File Bros. is built in starting with IZ2S Platform 0.2.1. Follow the platform's connection instructions. |
 
 The application checks the run folder, matching session proof and live FS endpoint before connecting. An old run folder, GPU mode, native RPC alone, or a normal run that has already closed its endpoint is insufficient. Compatibility depends on the upstream run format and a successful live session, not just the repository name.
 
-IZ2S Platform RUN21 also includes a panel-integrated edition that opens as a workspace tab. This repository distributes the independent application. Its manual connection form remains available regardless of where the qualified session was created.
+[IZ2S Platform](https://github.com/byizmysh/IZ2S-Platform) includes a panel-integrated edition starting with **version 0.2.1**, opening as a workspace tab. This repository distributes the independent application. Its manual connection form remains available regardless of where the qualified session was created.
 
 ## Requirements
 
@@ -67,7 +68,7 @@ node start.cjs
 
 ## First connection, step by step
 
-1. Have an active FS RPC connection from **ns2jb2** or **ns2jb** in `--rpc` mode, and leave that connection application running. Refer to the selected project's own connection instructions.
+1. Have an active FS RPC connection from **ns2jb2** or **ns2jb** in `--rpc` mode, or through **IZ2S Platform**, and leave that connection application running. Refer to the selected project's own connection instructions. SmileBASIC 4 RPC is supported; Civilization VII RPC support is experimental.
 2. Start Super File Bros. Its local page opens automatically. If it does not, use the private link printed in its terminal.
 3. The manager revalidates saved settings and searches nearby **ns2jb2/ns2jb** folders for active `runs/switch2-*` sessions. The detected path is filled into Connection settings. **Detect session** repeats this search.
 4. Enter **Console IPv4** if it has not been saved. If your session is stored elsewhere, enter the full **Held FS run folder** manually, for example `/path/to/ns2jb2/runs/switch2-ABC123`, then click **Connect**. Select the complete current session folder, not the repository root.
