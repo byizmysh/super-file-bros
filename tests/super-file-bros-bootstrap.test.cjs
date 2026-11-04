@@ -89,19 +89,48 @@ if (!(Test-Path -LiteralPath $archive)) {
 $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($env:SFB_BAD_CHECKSUM -eq '1') { $hash = '0' * 64 }
 Set-Content -LiteralPath (Join-Path $tools 'node-runtimes.tsv') -Value ("version\ttarget\tsha256\n22.23.4\t" + $target + "\t" + $hash)
-function Get-Command { param($Name, $CommandType, $ErrorAction) if ($Name -ne 'node.exe') { Microsoft.PowerShell.Core\\Get-Command @PSBoundParameters } }
 function Invoke-WebRequest { param([switch]$UseBasicParsing, $Uri, $OutFile) if ($env:SFB_OFFLINE -eq '1') { throw 'Unexpected download' }; Add-Content -LiteralPath (Join-Path $env:SFB_FIXTURE_TEMP 'downloads') -Value 'download'; Copy-Item -LiteralPath (Join-Path $env:SFB_FIXTURE_TEMP 'node.zip') -Destination $OutFile }
 & (Join-Path $tools 'bootstrap.ps1') start --help 'spaces & 100%'
 exit $LASTEXITCODE
 `);
   const env = {...process.env,SFB_FIXTURE_APP:app,SFB_FIXTURE_TEMP:temporary,SFB_FIXTURE_NODE:process.execPath};
+  // Hide the existing runtime through PATH, preserving PowerShell command discovery.
+  const searchPath = env[Object.keys(env).find(key => key.toUpperCase()==='PATH')] || '';
+  const directories = await Promise.all(searchPath.split(path.delimiter).map(async directory => {
+    try { await fs.access(path.join(directory,'node.exe')); return null; } catch { return directory; }
+  }));
+  // PowerShell 5 must discover its own modules when the test runs under PowerShell 7.
+  for (const key of Object.keys(env)) if (['PATH','PSMODULEPATH'].includes(key.toUpperCase())) delete env[key];
+  env.PATH = directories.filter(directory => directory!==null).join(path.delimiter);
   const run = extra => spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',harness],{env:{...env,...extra},encoding:'utf8',timeout:120000});
   let result = run({SFB_BAD_CHECKSUM:'1'});
-  assert.equal(result.status,1,result.stdout+result.stderr); assert.match(result.stdout,/checksum mismatch/);
+  assert.equal(result.status,1,result.stdout+result.stderr); assert.match(result.stdout+result.stderr,/checksum mismatch/);
   assert.deepEqual(await fs.readdir(path.join(app,'data/runtime')),[]);
   result = run({SFB_BAD_CHECKSUM:'0'});
   assert.equal(result.status,0,result.stdout+result.stderr); assert.ok(result.stdout.includes('APP ["--help","spaces & 100%"]'));
   result = run({SFB_OFFLINE:'1'});
   assert.equal(result.status,0,result.stdout+result.stderr); assert.match(result.stdout,/APP /);
   assert.deepEqual((await fs.readdir(path.join(app,'data/runtime'))).sort(),['node']);
+});
+test('Windows launchers recover native PowerShell modules from an inherited incompatible module path', {skip:process.platform!=='win32'}, async t => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(),'sfb-windows-modules-'));
+  t.after(() => fs.rm(temporary,{recursive:true,force:true}));
+  const app = path.join(temporary,"Files & Games ' 100%"), tools = path.join(app,'tools/fs-rpc-browser');
+  const emptyModules = path.join(temporary,'empty-modules');
+  await fs.mkdir(tools,{recursive:true}); await fs.mkdir(emptyModules);
+  await fs.writeFile(path.join(tools,'bootstrap.ps1'), `param([string]$Action)
+$ErrorActionPreference = 'Stop'
+$hash = Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256
+if ($hash.Hash.Length -ne 64) { throw 'SHA-256 unavailable' }
+Write-Host "MODULES_OK $Action"
+`);
+  const env = {...process.env};
+  for (const key of Object.keys(env)) if (key.toUpperCase()==='PSMODULEPATH') delete env[key];
+  env.PSModulePath = emptyModules;
+  for (const [name,action] of [['Start Windows.cmd','start'],['Install Windows.cmd','install']]) {
+    const launcher = path.join(app,name);
+    await fs.copyFile(path.join(root,'tools/fs-rpc-browser/launchers',name),launcher);
+    const result = spawnSync('cmd.exe',['/d','/s','/c','""'+launcher+'""'],{env,encoding:'utf8',input:'\r\n',timeout:30000,windowsVerbatimArguments:true});
+    assert.equal(result.status,0,result.stdout+result.stderr); assert.ok(result.stdout.includes('MODULES_OK '+action),result.stdout+result.stderr);
+  }
 });
