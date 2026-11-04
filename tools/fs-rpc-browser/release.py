@@ -24,7 +24,9 @@ def build():
         'tools/fs-rpc-browser/start.cjs', 'tools/fs-rpc-browser/server.cjs',
         'tools/fs-rpc-browser/brand.cjs', 'tools/fs-rpc-browser/requirements.cjs',
         'tools/fs-rpc-browser/install.cjs', 'tools/fs-rpc-browser/test.cjs', 'tools/fs-rpc-browser/release.py',
-        *['tests/' + name + '.test.cjs' for name in ['fs-rpc-browser', 'fs-rpc-downloads', 'fs-rpc-discovery', 'fs-rpc-writes', 'dolphin-fs-rpc', 'super-file-bros-release']],
+        'tools/fs-rpc-browser/bootstrap.sh', 'tools/fs-rpc-browser/bootstrap.ps1',
+        'tools/fs-rpc-browser/console.sh', 'tools/fs-rpc-browser/node-runtimes.tsv',
+        *['tests/' + name + '.test.cjs' for name in ['fs-rpc-browser', 'fs-rpc-downloads', 'fs-rpc-discovery', 'fs-rpc-writes', 'dolphin-fs-rpc', 'super-file-bros-release', 'super-file-bros-bootstrap']],
         'tools/fs-rpc-browser/file-managers.cjs', 'tools/fs-rpc-browser/discovery.cjs', 'tools/fs-rpc-browser/downloads.cjs', 'tools/fs-rpc-browser/zip.cjs',
         'tools/fs-rpc-browser/ui/index.html', 'tools/fs-rpc-browser/ui/app.js', 'tools/fs-rpc-browser/ui/style.css',
         'tools/dolphin-fs-rpc/library.cjs', 'tools/dolphin-fs-rpc/control.cjs',
@@ -62,7 +64,7 @@ def build():
         if file.suffix == '.cmd':
             data = data.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
         target.write_bytes(data)
-        target.chmod(0o755 if file.suffix in ('.sh', '.command') else 0o644)
+        target.chmod(0o755 if executable(file) else 0o644)
     for file in sorted((assets / 'release-assets').rglob('*')):
         if file.is_file():
             target = stage / file.relative_to(assets / 'release-assets')
@@ -80,10 +82,10 @@ def build():
                     'start': 'Double-click **Start Windows.cmd**.', 'install': 'Run **Install Windows.cmd** to add a Start menu shortcut.'},
         'macos': {'runtime': 'darwin', 'launchers': ['Start macOS.command', 'Install macOS.command', 'start.sh', 'Install shortcut.sh'],
                   'start': 'Double-click **Start macOS.command**, or run `sh "Start macOS.command"` in Terminal.', 'install': 'Run **Install macOS.command** to add a shortcut to your user Applications folder.'},
-        'linux': {'runtime': 'linux', 'launchers': ['start.sh', 'Install shortcut.sh'],
-                  'start': 'Run `sh start.sh` in a terminal inside this folder.', 'install': 'Run `sh "Install shortcut.sh"` to add a user application-menu shortcut.'},
+        'linux': {'runtime': 'linux', 'launchers': ['start.sh', 'Start Linux.desktop', 'Install shortcut.sh'],
+                  'start': 'Open **Start Linux.desktop** (allow launching if your desktop asks), or run `sh start.sh` in a terminal inside this folder.', 'install': 'Run `sh "Install shortcut.sh"` to add a user application-menu shortcut.'},
     }
-    (stage / 'START_HERE.md').write_text('# Super File Bros. ' + VERSION + '\n\nThis standalone application does not require IZ2S Platform.\n\nInstall Node.js 20.20+ (22+ recommended), keep the qualified upstream FS RPC session running, then run `node start.cjs` or the launcher for your OS. Read README.md and DISCLAIMER.md before changing console files.\n')
+    (stage / 'START_HERE.md').write_text('# Super File Bros. ' + VERSION + '\n\nThis standalone application does not require IZ2S Platform.\n\nExtract the entire archive, then use the launcher for your OS. Its console checks dependencies and installs Node.js locally if needed (Internet required for initial setup). No runtime is bundled. Keep the qualified upstream FS RPC session running. Read README.md and DISCLAIMER.md before changing console files.\n')
     write_manifest(stage, 'source')
     source_archive = base / ('super-file-bros-' + VERSION + '-source.zip')
     reject_cyrillic(stage)
@@ -103,17 +105,18 @@ def build():
                 (destination / launcher.name).unlink(missing_ok=True)
         (destination / 'PACKAGE.json').write_text(json.dumps({'name': 'Super File Bros.', 'version': VERSION,
             'platform': platform, 'nodePlatform': options['runtime'], 'nodeRequired': True,
-            'architecture': 'Uses the architecture of the installed Node.js runtime'}, indent=2) + '\n')
+            'nodeBundled': False, 'dependencySetup': 'Automatic on first launch when needed',
+            'architecture': 'Uses compatible installed Node.js, or downloads Node.js for the host CPU'}, indent=2) + '\n')
         (destination / 'START_HERE.md').write_text(
             '# Super File Bros. for ' + {'windows': 'Windows', 'macos': 'macOS', 'linux': 'Linux'}[platform] + '\n\n'
-            '1. Install Node.js 20.20 or newer (22+ recommended) from https://nodejs.org/ if needed.\n'
-            '2. Extract the entire package to a writable folder and keep its files together.\n'
-            '3. ' + options['start'] + '\n'
+            '1. Extract the entire package to a writable folder and keep its files together.\n'
+            '2. ' + options['start'] + '\n'
+            '3. The console checks dependencies. If Node.js 20.20+ is missing, it downloads and verifies the official Node.js runtime, then installs it under `data/runtime/node/`. Internet is needed for this first setup only. Node.js is not bundled in this archive.\n'
             '4. Keep your existing ns2jb2 or ns2jb FS RPC connection running. The active run folder is detected from saved settings or nearby sessions; enter the console IPv4 if needed.\n'
             '5. Read **README.md** for the full connection, transfer and file-management instructions.\n\n'
             + options['install'] + ' Shortcuts reference this folder; keep it in place. No administrator privileges are required.\n\n'
             '**Use caution:** modifying, corrupting or deleting files can have unexpected consequences. Back up important data first. Folder deletion is permanent and recursive. Read **DISCLAIMER.md** before making changes.\n\n'
-            'This is a portable source package. Node.js is required separately; it is not a standalone native executable. All project instructions and interface text are in English.\n')
+            'Node.js setup does not need administrator privileges. On minimal Linux systems, installing missing download tools through the system package manager may request an administrator password. The separate console connection launcher still has its own setup requirements.\n')
         manifest = write_manifest(destination, platform)
         reject_cyrillic(destination)
         suffix = '.tar.gz' if platform == 'linux' else '.zip'
@@ -162,7 +165,7 @@ def reject_cyrillic(stage):
 
 
 def executable(file):
-    return file.suffix in ('.sh', '.command')
+    return file.suffix in ('.sh', '.command', '.desktop')
 
 
 def write_zip(stage, archive):

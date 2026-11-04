@@ -22,6 +22,15 @@ jobs:
           node-version: ${{ matrix.node }}
           package-manager-cache: false
       - run: node start.cjs --help
+      - name: Check Unix launch script
+        if: runner.os != 'Windows'
+        run: sh ./start.sh --help
+        env:
+          SFB_TERMINAL: '1'
+      - name: Check Windows launch script
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: '"Start Windows.cmd" --help'
       - run: npm test
         env:
           PYTHON: python

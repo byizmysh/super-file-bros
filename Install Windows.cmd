@@ -1,11 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-where node >nul 2>nul
-if errorlevel 1 (
-  echo Install Node.js 22+ from https://nodejs.org/ first.
-  pause
-  exit /b 1
-)
-node tools/fs-rpc-browser/install.cjs
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "tools\fs-rpc-browser\bootstrap.ps1" install
+set "result=%errorlevel%"
 pause
+exit /b %result%

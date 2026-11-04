@@ -1,12 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-where node >nul 2>nul
-if errorlevel 1 (
-  echo Super File Bros. needs Node.js.
-  echo Install Node.js 22+ from https://nodejs.org/ and reopen this launcher.
-  pause
-  exit /b 1
-)
-node start.cjs %*
-if errorlevel 1 pause
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "tools\fs-rpc-browser\bootstrap.ps1" start %*
+set "result=%errorlevel%"
+if not "%result%"=="0" pause
+exit /b %result%

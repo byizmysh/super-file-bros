@@ -2,4 +2,4 @@
 
 This standalone application does not require IZ2S Platform.
 
-Install Node.js 20.20+ (22+ recommended), keep the qualified upstream FS RPC session running, then run `node start.cjs` or the launcher for your OS. Read README.md and DISCLAIMER.md before changing console files.
+Extract the entire archive, then use the launcher for your OS. Its console checks dependencies and installs Node.js locally if needed (Internet required for initial setup). No runtime is bundled. Keep the qualified upstream FS RPC session running. Read README.md and DISCLAIMER.md before changing console files.

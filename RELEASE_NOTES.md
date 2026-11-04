@@ -10,6 +10,7 @@ English-only platform release for **Super File Bros.**. A file manager for Ninte
 - Session health checks invalidate stale exports after a disconnected or replaced endpoint.
 - Standalone automatic discovery and manual run-folder/IP connection are preserved. No IZ2S runtime is required.
 - Separate GitHub-ready source archive alongside platform packages.
+- First-run dependency setup in a visible console on Windows, macOS and Linux. Compatible Node.js installations are reused; otherwise the official runtime is downloaded, verified and installed locally. No Node.js binary is bundled in the release archives.
 
 ## Included
 
@@ -23,7 +24,20 @@ English-only platform release for **Super File Bros.**. A file manager for Ninte
 
 ## Before starting
 
-Install Node.js 20.20+ (22+ recommended), extract the entire asset, establish `node run.cjs --rpc` with your chosen upstream launcher, and leave it running. The session folder is detected from saved settings or nearby ns2jb2/ns2jb runs. Enter the console IPv4 if needed; a manual folder selection remains available. Read README.md for complete steps.
+Extract the entire asset and open its OS launch script. The console automatically installs Node.js locally if a compatible version is missing; Internet is required for this initial setup. Establish `node run.cjs --rpc` with your chosen upstream launcher, and leave it running. The session folder is detected from saved settings or nearby ns2jb2/ns2jb runs. Enter the console IPv4 if needed; a manual folder selection remains available. Read README.md for complete steps.
+
+## Installation by platform
+
+Download the matching package below and extract the **entire archive** to a writable folder. Open the extracted `super-file-bros` folder and start its script. A console checks dependencies and installs Node.js locally if a compatible version is missing. **No manual Node.js installation is required.** Initial setup needs Internet access; later launches reuse the installed runtime. Node.js is not bundled in the archive.
+
+| Version | Download | Start | Optional shortcut |
+| --- | --- | --- | --- |
+| Windows | [Windows ZIP](https://github.com/byizmysh/super-file-bros/releases/download/v0.2.0/super-file-bros-0.2.0-windows.zip) | Double-click **Start Windows.cmd**. | Run **Install Windows.cmd** to add a Start menu shortcut. |
+| macOS | [macOS ZIP](https://github.com/byizmysh/super-file-bros/releases/download/v0.2.0/super-file-bros-0.2.0-macos.zip) | Double-click **Start macOS.command**, or run `sh "Start macOS.command"` in Terminal. | Run **Install macOS.command** to add the app shortcut to your user Applications folder. |
+| Linux | [Linux tar.gz](https://github.com/byizmysh/super-file-bros/releases/download/v0.2.0/super-file-bros-0.2.0-linux.tar.gz) | Open **Start Linux.desktop** (allow launching if asked), or run `sh start.sh` in the extracted folder. | Run `sh "Install shortcut.sh"` to add an application-menu shortcut. |
+| Source / all platforms | [Source ZIP](https://github.com/byizmysh/super-file-bros/releases/download/v0.2.0/super-file-bros-0.2.0-source.zip) | Use the matching OS launcher above; all are included. `node start.cjs` also works if Node.js is already on PATH. | Use the matching installer above. |
+
+The optional installers perform the same dependency check, then create user shortcuts; keep the extracted folder in place. Node.js is downloaded from nodejs.org, verified against a pinned SHA-256 checksum and stored under `data/runtime/node/`. No `npm install` or compilation is needed. Minimal Linux systems may request an administrator password to install missing download tools through the system package manager. Keep your verified upstream `--rpc` session running. When the browser opens, confirm the detected **Held FS run folder**, enter **Console IPv4** if needed, and click **Connect**.
 
 ## Limitations
 
@@ -42,5 +56,5 @@ SD writes are available through the browser. Internal mounts, decoded game expor
 - `SHA256SUMS` — checksums for all four archives.
 - `SOURCE-MANIFEST-source.json`, `SOURCE-MANIFEST-windows.json`, `SOURCE-MANIFEST-macos.json`, `SOURCE-MANIFEST-linux.json` — per-file checksums, also included inside each package as `SOURCE-MANIFEST.json`.
 
-Each platform archive includes **START_HERE.md**, the full **README.md**, the safety notice and source. Node.js is required separately. All distributed project text is in English.
+Each platform archive includes **START_HERE.md**, the full **README.md**, the safety notice and source. The launch scripts install Node.js on first use when needed; it is not bundled. Linux setup may request an administrator password if basic download tools are missing.
 Keep private run folders, `data/`, logs and console content out of public issues and release uploads. Publish only the generated release assets.

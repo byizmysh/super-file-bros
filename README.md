@@ -24,12 +24,12 @@ IZ2S Platform RUN21 also includes a panel-integrated edition that opens as a wor
 ## Requirements
 
 - A PC running Windows, macOS or Linux and a current browser.
-- [Node.js](https://nodejs.org/) **20.20 or newer; 22+ recommended**, available on PATH. The selected upstream launcher may impose a higher minimum.
+- [Node.js](https://nodejs.org/) **20.20 or newer; 22+ recommended**. The launch scripts reuse a compatible installed version, or automatically download and install Node.js locally on first launch. The selected upstream launcher has its own requirements.
 - One of the launchers above, running on the **same PC**, with its complete held run folder available locally.
 - A reachable console IPv4 address on your local network.
 - Optional: an FTP-capable file manager such as FileZilla or Dolphin.
 
-No `npm install`, Python, compiler or administrator privileges are required to run this manager. Required upstream files are read from your existing run folder; do not copy only its JSON files.
+No `npm install`, Python or compiler is required to run this manager. Initial dependency setup needs Internet access if Node.js is missing. Node.js is installed under `data/runtime/node/` without administrator privileges; minimal Linux systems may ask for an administrator password to install missing download tools. Required upstream files are read from your existing run folder; do not copy only its JSON files.
 
 ## Installation: download, extract, launch
 
@@ -41,22 +41,25 @@ No `npm install`, Python, compiler or administrator privileges are required to r
    | macOS | `super-file-bros-0.2.0-macos.zip` |
    | Linux | `super-file-bros-0.2.0-linux.tar.gz` |
 
-   Each package includes the matching launchers, a platform-specific **START_HERE.md**, and the complete English instructions. Node.js is installed separately; these are portable source packages, not standalone native executables. They use the architecture of your installed Node.js runtime.
+   Each package includes the matching launchers, a platform-specific **START_HERE.md**, and complete instructions. No Node.js binary is bundled in the archive. The launchers check dependencies in a console and download the official runtime for your OS and CPU only when needed. Downloads are checked against pinned SHA-256 checksums before installation.
 2. Extract the **entire** archive to a folder you can write to. Do not start it inside the archive. Keep the folder's contents together.
-3. Install Node.js from its official website if it is not already installed, then reopen your terminal or launcher.
-4. Start the application:
+3. Start the application using the script below. Leave its console open while first-run setup completes; the manager starts automatically afterward:
 
 | OS | Start | Optional shortcut |
 | --- | --- | --- |
 | Windows | Double-click **Start Windows.cmd** | Run **Install Windows.cmd**; creates a Start menu shortcut for your user. |
 | macOS | Double-click **Start macOS.command** | Run **Install macOS.command**; creates `~/Applications/Super File Bros.app`. |
-| Linux | Run **`sh start.sh`** from the extracted folder | Run **`sh "Install shortcut.sh"`**; creates an application-menu entry. |
+| Linux | Open **Start Linux.desktop** (allow launching if asked), or run **`sh start.sh`** from the extracted folder | Run **`sh "Install shortcut.sh"`**; creates an application-menu entry. |
 
 If macOS/Linux reports that a script is not executable, use `sh "Start macOS.command"` or `sh start.sh` in a terminal. If the OS blocks an unsigned script, use the terminal commands after reviewing the source and follow your OS's normal security guidance.
 
-The optional installers create shortcuts only: they do not download dependencies, change the original RPC launcher, copy the manager to another location or require root/admin access. Keep this portable folder in place after creating a shortcut; rerun the installer if you move it. On macOS, shortcut diagnostics go to `super-file-bros.log` in this folder.
+The optional installers run the same dependency checks, then create a shortcut for your user. Shortcuts open the launch script in a console and reuse its first-run setup. Keep this portable folder in place after creating a shortcut; rerun the installer if you move it. They do not change the original RPC launcher.
 
-For any OS, the universal alternative is:
+Setup reuses a compatible Node.js on PATH, otherwise it checks its local installation before downloading anything. Subsequent launches work without a download. A failed or interrupted download is discarded and can be retried by reopening the script. On Linux, missing curl/wget, CA certificates, tar, gzip or SHA-256 tools are installed through an available system package manager; the OS may request your administrator password. The automatic runtime download supports common Linux architectures, Intel/Apple Silicon macOS, and x64/ARM64/x86 Windows. If the runtime cannot run on your OS, install a compatible Node.js manually and retry.
+
+This setup covers the manager. Follow the separate ns2jb2/ns2jb instructions to prepare the console connection.
+
+If you already have a compatible Node.js on PATH, the universal alternative is:
 
 ```sh
 node start.cjs
@@ -81,7 +84,7 @@ node start.cjs --run "/absolute/path/to/ns2jb2/runs/switch2-ABC123" --host 192.1
 On Windows, for example:
 
 ```powershell
-node start.cjs --run "C:\Tools\ns2jb\runs\switch2-ABC123" --host 192.168.1.20
+.\"Start Windows.cmd" --run "C:\Tools\ns2jb\runs\switch2-ABC123" --host 192.168.1.20
 ```
 
 `--no-open` prints the local URL without opening a browser. `--help` prints the command syntax. The private URL key controls this local tool: do not publish it or share your live run folder. An IP alone cannot replace the run folder or retained FS handles. After restarting the console, establish a new session and select its new run folder.
@@ -121,7 +124,7 @@ Use the exact console address and port shown in the panel, **anonymous login**, 
 
 ## Stopping, upgrading and uninstalling
 
-Finish or cancel transfers, then click **Disconnect export**. Close the manager with **Ctrl+C** in its terminal. A macOS app shortcut runs in the background; to stop its process, use Activity Monitor and identify the `node` process whose command points to this installation. Close the original RPC launcher only after all manager operations have finished; follow its cleanup instructions.
+Finish or cancel transfers, then click **Disconnect export**. Close the manager with **Ctrl+C** in its terminal. Close the original RPC launcher only after all manager operations have finished; follow its cleanup instructions.
 
 For upgrades, stop the old instance and extract the new version into a new folder. You may copy its `data/state/fs-rpc-browser/connection.json` locally to preserve preferences; saved session details still need to be valid. Never include `data/` in a public repository or release. Rerun the optional shortcut installer to point to the new folder. Remove the old folder only after preserving anything you need.
 
@@ -131,7 +134,8 @@ To uninstall, stop the manager, remove its portable folder and delete its option
 
 | Symptom | What to check |
 | --- | --- |
-| Node not found / unsupported version | Install the required Node.js version, reopen the terminal, check `node --version`. |
+| Dependency setup failed | Check the console error and Internet access, then reopen the launch script. Alternatively install Node.js 20.20+ manually. A checksum mismatch discards the download. |
+| Linux double-click opens a text editor | Use **Start Linux.desktop**, allowing launch if asked, or open a terminal in this folder and run `sh start.sh`. |
 | No active session detected | Use Connection settings with the exact current run folder and console IPv4. First-time upstream runs may need manual selection; auto-detection does not scan the LAN or all folders on disk. |
 | Run folder is not qualified | The launcher must finish its held FS checks with `--rpc`; a regular completed run or native/GPU-only connection cannot be upgraded by this manager. |
 | Service busy / not responding | Wait for preparation or a transfer. Check the original launcher and console, then retry. Do not replay uncertain native operations. If the session ended, start a new qualified run. |

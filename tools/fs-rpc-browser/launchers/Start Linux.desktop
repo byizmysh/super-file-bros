@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Super File Bros.
+Comment=Start the file manager and install missing dependencies
+Exec=sh -c "exec sh \\"\\${1%%/*}/start.sh\\"" sh %k
+Terminal=true
+Icon=system-file-manager
+Categories=Utility;FileManager;
