@@ -1,6 +1,15 @@
-# Super File Bros. 0.1.0
+# Super File Bros. 0.2.0
 
 English-only platform release for **Super File Bros.**. A file manager for Nintendo Switch 2, using an existing qualified held FS RPC run from [ns2jb2](https://gitlab.com/BermTheSequel/ns2jb2) or [ns2jb](https://gitlab.com/kurumuz/ns2jb).
+
+## Changes in 0.2.0
+
+- Compact folder toolbar, Back/Forward/Up history and clickable breadcrumbs.
+- Upload dropdown, keyboard-accessible file views, better narrow-screen dialogs and clearer busy/error states.
+- Explicit file-manager selection, required custom paths, Windows File Explorer/Finder presets and Copy FTP address.
+- Session health checks invalidate stale exports after a disconnected or replaced endpoint.
+- Standalone automatic discovery and manual run-folder/IP connection are preserved. No IZ2S runtime is required.
+- Separate GitHub-ready source archive alongside platform packages.
 
 ## Included
 
@@ -26,11 +35,12 @@ SD writes are available through the browser. Internal mounts, decoded game expor
 
 ## Assets
 
-- `super-file-bros-0.1.0-windows.zip` — Windows launchers and source.
-- `super-file-bros-0.1.0-macos.zip` — macOS launchers and source.
-- `super-file-bros-0.1.0-linux.tar.gz` — Linux scripts and source, preserving executable permissions.
-- `SHA256SUMS` — checksums for all three archives.
-- `SOURCE-MANIFEST-windows.json`, `SOURCE-MANIFEST-macos.json`, `SOURCE-MANIFEST-linux.json` — per-file checksums, also included inside each package as `SOURCE-MANIFEST.json`.
+- `super-file-bros-0.2.0-windows.zip` — Windows launchers and source.
+- `super-file-bros-0.2.0-macos.zip` — macOS launchers and source.
+- `super-file-bros-0.2.0-linux.tar.gz` — Linux scripts and source, preserving executable permissions.
+- `super-file-bros-0.2.0-source.zip` — GitHub-ready source, all OS launchers and workflow.
+- `SHA256SUMS` — checksums for all four archives.
+- `SOURCE-MANIFEST-source.json`, `SOURCE-MANIFEST-windows.json`, `SOURCE-MANIFEST-macos.json`, `SOURCE-MANIFEST-linux.json` — per-file checksums, also included inside each package as `SOURCE-MANIFEST.json`.
 
-Each archive includes **START_HERE.md**, the full **README.md**, the safety notice and source. Node.js is required separately. All distributed project text is in English.
+Each platform archive includes **START_HERE.md**, the full **README.md**, the safety notice and source. Node.js is required separately. All distributed project text is in English.
 Keep private run folders, `data/`, logs and console content out of public issues and release uploads. Publish only the generated release assets.

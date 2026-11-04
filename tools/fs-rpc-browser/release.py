@@ -11,7 +11,7 @@ import re
 from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = '0.1.0'
+VERSION = json.loads((ROOT / 'package.json').read_text())['version']
 
 
 def build():
@@ -83,8 +83,15 @@ def build():
         'linux': {'runtime': 'linux', 'launchers': ['start.sh', 'Install shortcut.sh'],
                   'start': 'Run `sh start.sh` in a terminal inside this folder.', 'install': 'Run `sh "Install shortcut.sh"` to add a user application-menu shortcut.'},
     }
+    (stage / 'START_HERE.md').write_text('# Super File Bros. ' + VERSION + '\n\nThis standalone application does not require IZ2S Platform.\n\nInstall Node.js 20.20+ (22+ recommended), keep the qualified upstream FS RPC session running, then run `node start.cjs` or the launcher for your OS. Read README.md and DISCLAIMER.md before changing console files.\n')
     write_manifest(stage, 'source')
-    products = []
+    source_archive = base / ('super-file-bros-' + VERSION + '-source.zip')
+    reject_cyrillic(stage)
+    write_zip(stage, source_archive)
+    shutil.copyfile(stage / 'SOURCE-MANIFEST.json', base / 'SOURCE-MANIFEST-source.json')
+    products = [{'platform': 'source', 'archive': str(source_archive), 'bytes': source_archive.stat().st_size,
+                 'sha256': hashlib.sha256(source_archive.read_bytes()).hexdigest(),
+                 'files': len(json.loads((stage / 'SOURCE-MANIFEST.json').read_text())['files']) + 1}]
     for platform, options in targets.items():
         destination = base / 'platforms' / platform / 'super-file-bros'
         if destination.exists():

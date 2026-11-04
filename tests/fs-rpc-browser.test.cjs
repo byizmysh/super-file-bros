@@ -6,6 +6,7 @@ const managers = require('../tools/fs-rpc-browser/file-managers.cjs');
 
 test('Windows/macOS/Linux file manager commands preserve one literal URL and never invoke a shell', async () => {
   const url = 'ftp://10.42.0.20:2123/';
+  assert.deepEqual(managers.command({manager:'explorer',url},'win32'), ['explorer.exe',[url]]);
   assert.deepEqual(managers.command({manager: 'dolphin', url}, 'linux'), ['dolphin', [url]]);
   assert.deepEqual(managers.command({manager: 'finder', url}, 'darwin'), ['/usr/bin/open', ['-a', 'Finder', url]]);
   assert.deepEqual(managers.command({manager: 'custom', executable: 'C:\\Apps With Spaces\\client.exe', url}, 'win32'), ['C:\\Apps With Spaces\\client.exe', [url]]);
@@ -90,4 +91,43 @@ test('automatic folder detection can fill a path before an IPv4 is configured wi
  const url=new URL(app.url);
  const response=await fetch(url.origin+'/api/detect',{method:'POST',headers:{origin:url.origin,'x-fs-key':app.token},body:'{}'});
  assert.equal(response.status,200);const result=await response.json();assert.equal(result.needsHost,true);assert.equal(result.connection.run,'/found/ns2jb/runs/switch2-active');assert.equal(serviceCalls,0);
+});
+
+
+test('standalone status rejects stale and replaced exports without a panel runtime', async t => {
+  let session={id:'new',session:'native-new'}, checked=0, calls=0;
+  const app=await require('../tools/fs-rpc-browser/server.cjs').create({
+    checkSession:async()=>{checked++;if(session instanceof Error)throw session;return session;},
+    backend:{request:async()=>{calls++;return {status:'ready',session:'native-old',url:'ftp://10.0.0.2:2122/'};}}
+  });
+  t.after(async()=>{app.server.closeAllConnections();await app.close();});
+  const url=new URL(app.url), headers={'x-fs-key':app.token};
+  const status=()=>fetch(url.origin+'/api/status',{headers}).then(r=>r.json());
+  assert.deepEqual(await status(),{status:'idle',sessionAvailable:true,sessionId:'new',progress:'Choose a new export for the current console session.'});
+  session=Error('The held endpoint ended');
+  assert.deepEqual(await status(),{status:'unavailable',sessionAvailable:false,error:'The held endpoint ended'});
+  assert.equal(calls,1);assert.equal(checked,2);
+});
+
+test('standalone manual connection persists an external run without IZ2S files', async t => {
+  const fs=require('node:fs/promises'), path=require('node:path'), os=require('node:os');
+  const temp=await fs.mkdtemp(path.join(os.tmpdir(),'sfb-manual-'));
+  t.after(()=>fs.rm(temp,{recursive:true,force:true}));
+  const run=path.join(temp,'upstream runs','switch2-live'), settingsFile=path.join(temp,'settings.json');
+  await fs.mkdir(path.join(run,'switch2'),{recursive:true});
+  await fs.writeFile(path.join(run,'switch2/fs-execution-current.json'),'{}');
+  const calls=[];
+  const app=await require('../tools/fs-rpc-browser/server.cjs').create({settingsFile,
+    checkSession:async()=>({id:'live',session:'live'}),
+    backend:{request:async(method,values)=>{calls.push(method);return method==='list'?{session:{id:'live',host:'10.0.0.2'},games:[]}:{status:'idle'};}}
+  });
+  t.after(async()=>{app.server.closeAllConnections();await app.close();});
+  const url=new URL(app.url);
+  const response=await fetch(url.origin+'/api/connect',{method:'POST',headers:{origin:url.origin,'x-fs-key':app.token},body:JSON.stringify({run,host:'10.0.0.2'})});
+  assert.equal(response.status,200);assert.deepEqual((await response.json()).games,[]);
+  assert.deepEqual(calls,['stop','list']);
+  assert.deepEqual(JSON.parse(await fs.readFile(settingsFile)),{run:await fs.realpath(run),host:'10.0.0.2'});
+  const html=await fetch(url.origin).then(r=>r.text());
+  assert.match(html,/id="connection-settings"/);assert.match(html,/id="connect-form"/);
+  assert.ok(!html.includes('/language/'));assert.ok(!html.includes('panel-link'));
 });

@@ -2,6 +2,8 @@
 
 **A file manager for Nintendo Switch 2.** Browse your console and SD card, download files and ZIP folders, manage SD files, and open a read-only FTP export in your preferred file manager.
 
+**Standalone application.** Super File Bros. has its own launcher, connection settings and version. IZ2S Platform is optional; this package runs without its panel, modules or services. The canonical project name is **Super File Bros.**
+
 [Safety notice](DISCLAIMER.md) · [Release notes](RELEASE_NOTES.md)
 
 > **Use with caution.** Modifying, corrupting or deleting files can have unexpected consequences, including consequences that appear later. You may lose screenshots, installed content, saves or access to software. Back up important data first. Folder deletion is permanent and includes its contents. You are responsible for the operations you choose; the software is provided without warranty.
@@ -12,11 +14,12 @@ Super File Bros. connects to a **verified, retained FS RPC session**. Connection
 
 | Launcher | Required launch mode | Instructions |
 | --- | --- | --- |
-| [IZ2S-Platform](https://github.com/byizmysh/IZ2S-Platform) | Coming in the next few days | Integration will be available in the next few days. |
 | [BermTheSequel/ns2jb2](https://gitlab.com/BermTheSequel/ns2jb2) | `node run.cjs --rpc` | Follow that project's current setup and console requirements. |
 | [kurumuz/ns2jb](https://gitlab.com/kurumuz/ns2jb) | `node run.cjs --rpc` | Follow that project's current setup and console requirements. |
 
 The application checks the run folder, matching session proof and live FS endpoint before connecting. An old run folder, GPU mode, native RPC alone, or a normal run that has already closed its endpoint is insufficient. Compatibility depends on the upstream run format and a successful live session, not just the repository name.
+
+IZ2S Platform RUN21 also includes a panel-integrated edition that opens as a workspace tab. This repository distributes the independent application. Its manual connection form remains available regardless of where the qualified session was created.
 
 ## Requirements
 
@@ -34,9 +37,9 @@ No `npm install`, Python, compiler or administrator privileges are required to r
 
    | System | Archive |
    | --- | --- |
-   | Windows | `super-file-bros-0.1.0-windows.zip` |
-   | macOS | `super-file-bros-0.1.0-macos.zip` |
-   | Linux | `super-file-bros-0.1.0-linux.tar.gz` |
+   | Windows | `super-file-bros-0.2.0-windows.zip` |
+   | macOS | `super-file-bros-0.2.0-macos.zip` |
+   | Linux | `super-file-bros-0.2.0-linux.tar.gz` |
 
    Each package includes the matching launchers, a platform-specific **START_HERE.md**, and the complete English instructions. Node.js is installed separately; these are portable source packages, not standalone native executables. They use the architecture of your installed Node.js runtime.
 2. Extract the **entire** archive to a folder you can write to. Do not start it inside the archive. Keep the folder's contents together.
@@ -100,9 +103,11 @@ Click **Start storage FTP**. Open folders under `/sd`, `/system` and `/user`; on
 | Upload files/folders | Yes | No | No |
 | Create folder, rename, delete | Yes | No | No |
 
-**Downloads:** use **Download**, **Download ZIP**, or **Download this folder (ZIP)**. Files go to the browser's chosen download location. The **Downloads** section shows transferred bytes and cancellation. Folders stream as uncompressed ZIP64 archives with nested and empty directories; file contents are not buffered as a complete archive. A disconnected download cannot resume: restart it and discard the partial file.
+**Downloads:** use **Download**, **Download ZIP**, or the toolbar **Download** button (current folder ZIP). Files go to the browser's chosen download location. The **Downloads** section shows transferred bytes and cancellation. Folders stream as uncompressed ZIP64 archives with nested and empty directories; file contents are not buffered as a complete archive. A disconnected download cannot resume: restart it and discard the partial file.
 
-**Uploads:** inside `/sd`, select **Upload files** or **Upload folder**. Progress and **Cancel upload** appear in the panel. Existing names are rejected rather than overwritten. A file is written in 32 KiB chunks to a temporary file, verified in the console buffer, flushed, then renamed into place after completion. Cancelling removes the current incomplete file; files already completed and folders already created remain. Browser folder uploads preserve supplied relative paths; use **New folder** for empty folders.
+**Navigation:** use **Back** and **Forward** for visited folders, **Up** for the parent folder, or click a breadcrumb such as **Storage › sd**. Up is disabled at the storage root. The selected file view and folder are restored when the page reloads.
+
+**Uploads:** inside `/sd`, open **Upload** and select **Upload files** or **Upload folder**. Progress and **Cancel upload** appear in the panel. Existing names are rejected rather than overwritten. A file is written in 32 KiB chunks to a temporary file, verified in the console buffer, flushed, then renamed into place after completion. Cancelling removes the current incomplete file; files already completed and folders already created remain. Browser folder uploads preserve supplied relative paths; use **New folder** for empty folders.
 
 **Rename and delete:** use the buttons beside an SD entry. Rename cannot replace an existing destination. **Delete permanently** requires confirmation and recursively deletes folder contents. Mounted roots and internal console partitions cannot be changed through these controls. Read the safety notice before editing files, especially inside `Nintendo`.
 
@@ -110,7 +115,7 @@ Click **Start storage FTP**. Open folders under `/sd`, `/system` and `/user`; on
 
 ## File manager / FTP setup
 
-Select a file manager and click **Open in file manager**. Presets include FileZilla, Dolphin, Nautilus, Nemo, Thunar, Finder and the system FTP handler where applicable. A custom executable path is also supported; provide an executable, not a shell command.
+Select a file manager and click **Open in file manager**. Choose a manager explicitly. Presets include Windows File Explorer, Finder, FileZilla, Dolphin, Nautilus, Nemo, Thunar and the system FTP handler where applicable. Windows File Explorer and Finder use the read-only FTP export, not a mounted writable drive; availability depends on OS FTP support. If the system handler cannot open FTP, use FileZilla or **Copy FTP address**. A manager opens on the computer running Super File Bros., not on a second computer viewing its page. A custom executable path is also supported; provide an executable, not a shell command.
 
 Use the exact console address and port shown in the panel, **anonymous login**, **passive mode**, and **one simultaneous connection**. Ports rotate within **2122–2199** when exports restart; do not assume a fixed port. FTP itself remains read-only; use the browser's SD controls for uploads, rename and delete. A browser alone may not open `ftp://` links. FTP is unencrypted and anonymous: use a trusted local network, avoid port forwarding and stop the export when finished.
 
@@ -151,7 +156,7 @@ npm test
 python3 tools/fs-rpc-browser/release.py
 ```
 
-The build creates separate reproducible Windows/macOS ZIPs and a Linux tar.gz, SHA-256 checksums and per-platform file manifests under `dist/super-file-bros/`. The included GitHub Actions workflow checks the source on Windows/macOS/Linux and builds the release assets. Its manual run uploads an artifact; pushing a `v*` tag also creates a **draft release** for review. Review its notes, assets and disclaimer before publishing. GitHub automatically generated source archives differ from the platform release assets until you run the builder.
+The build creates separate reproducible Windows/macOS ZIPs and a Linux tar.gz, a separate `super-file-bros-0.2.0-source.zip` containing the GitHub-ready source with all launchers, SHA-256 checksums and per-package file manifests under `dist/super-file-bros/`. The included GitHub Actions workflow checks the source on Windows/macOS/Linux and builds the release assets. Its manual run uploads an artifact; pushing a `v*` tag also creates a **draft release** for review. Review its notes, assets and disclaimer before publishing. The source ZIP contains no `data/`, credentials, sessions or panel runtime. Upload its inner `super-file-bros/` contents to the repository root, including hidden files. For an existing checkout, apply the source changes while keeping its `.git/` and local ignored `data/`. Use tag `v0.2.0` only after the checks pass. GitHub automatically generated source archives differ from the generated platform assets.
 
 ## Credits and license
 

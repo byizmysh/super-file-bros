@@ -1,17 +1,25 @@
 'use strict';
 const $ = id => document.getElementById(id), key = location.hash.slice(1);
-let games = [], connected = false, state = {}, busy = false, cwd = '/', lastStorageLease = '', connectionHost = '', pollError = false;
+let games = [], connected = false, state = {status:'checking'}, busy = false, cwd = '/', lastStorageLease = '', connectionHost = '', connectionId = '', pollError = false;
+let folderHistory = [], historyIndex = -1;
 async function api(route, data) {
-  const response = await fetch(route, {method: data === undefined ? 'GET' : 'POST', headers: {'x-fs-key': key,
-    ...(data === undefined ? {} : {'content-type': 'application/json'})}, ...(data === undefined ? {} : {body: JSON.stringify(data)})});
-  const result = await response.json(); if (!response.ok) throw Error(result.error || 'Request failed'); return result;
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), data === undefined ? 15000 : 150000);
+  try {
+    const response = await fetch(route, {method:data === undefined ? 'GET' : 'POST', signal:controller.signal,
+      headers:{'x-fs-key':key, ...(data === undefined ? {} : {'content-type':'application/json'})},
+      ...(data === undefined ? {} : {body:JSON.stringify(data)})});
+    const result = await response.json(); if (!response.ok) throw Error(result.error || 'Request failed'); return result;
+  } catch (error) {
+    if (error.name === 'AbortError') throw Error('The request timed out. Check the current status before trying again.');
+    throw error;
+  } finally {clearTimeout(timer);}
 }
 function notice(text) {$('notice').textContent = text;}
-async function action(fn) {if (busy) return; busy = true; try {await fn();} catch (error) {notice(error.message);} finally {busy = false;}}
+async function action(fn) {if (busy) return; busy = true; document.body.setAttribute('aria-busy','true'); renderStatus(); try {await fn();} catch (error) {notice(error.message);} finally {busy = false; document.body.removeAttribute('aria-busy'); renderStatus();}}
 function row(name, detail, label, callback) {
   const item = document.createElement('div'); item.className = 'game';
   const text = document.createElement('div'), title = document.createElement('strong'), sub = document.createElement('small');
-  title.textContent = name; sub.textContent = detail; text.append(title, sub); item.append(text);
+  title.setAttribute('translate','no'); title.textContent = name; sub.textContent = detail; text.append(title, sub); item.append(text);
   if (label) {const button = document.createElement('button'); button.textContent = label; button.onclick = () => action(callback); item.append(button);}
   return item;
 }
@@ -26,12 +34,29 @@ function renderGames() {
   if (!$('games').children.length) $('games').append(row(connected ? 'No matching games' : 'Connect to load installed games', '', '', null));
 }
 function renderStatus() {
-  $('export-name').textContent = state.name || 'Nothing connected'; $('export-status').textContent = state.status || 'Idle';
-  $('progress').textContent = state.error || state.progress || 'Choose a game or open SD & console storage.';
-  $('open').disabled = state.status !== 'ready'; $('stop').disabled = !['ready', 'preparing', 'stopping'].includes(state.status);
+  const manager=$('manager').value,needsPath=manager==='custom'&&!$('executable').value.trim();
+  $('export-name').textContent = state.name || 'Nothing connected'; $('export-status').textContent = ({checking:'Checking…',ready:'Ready',idle:'Idle',closed:'Disconnected',failed:'Failed',unavailable:'Unavailable',preparing:'Preparing…',stopping:'Stopping…'})[state.status] || state.status || 'Idle';
+  $('export-status').dataset.state=state.status||'idle';
+  $('progress').textContent = state.error || state.progress || (state.status==='ready'?(state.mode==='storage'?'Open SD & console storage to browse files.':'Ready to browse in your file manager.'):'Choose a game or open SD & console storage.');
+  $('open').disabled = busy || !connected || state.status !== 'ready' || !manager || needsPath; $('stop').disabled = busy || !connected || !['ready', 'preparing'].includes(state.status);
+  $('open').title=!connected?'Connect to the console first.':state.status!=='ready'?'Start a filesystem export first.':!manager?'Choose a file manager first.':needsPath?'Enter the file manager executable path.':'Open in file manager';
+  $('executable').parentElement.hidden=!manager||['system','explorer','finder'].includes(manager);
+  $('executable').required=manager==='custom';$('executable').parentElement.querySelector('.muted').textContent=manager==='custom'?'(required)':'(optional)';
+  $('connect-form').querySelector('button').disabled=busy;$('detect').disabled=busy;$('refresh').disabled=busy||!connected;
   $('ftp-url').hidden = state.status !== 'ready'; $('ftp-url').textContent = state.url || ''; $('ftp-url').href = state.url || '#';
   $('mounts').textContent = (state.mounts || []).map(name => '/' + name).join(' · ');
-  $('storage-start').disabled = !connected || state.status === 'stopping';
+  $('storage-start').disabled = !connected || busy || ['preparing','stopping'].includes(state.status);
+  const storageReady = connected && state.status === 'ready' && state.mode === 'storage';
+  $('download-folder').disabled = !storageReady || busy;
+  $('up').disabled = !storageReady || busy || cwd === '/';
+  $('back').disabled = !storageReady || busy || historyIndex <= 0;
+  $('forward').disabled = !storageReady || busy || historyIndex >= folderHistory.length - 1;
+  $('upload-menu').setAttribute('aria-disabled',String(!storageReady || !folderWritable || busy || uploading));
+  $('copy-ftp').hidden = state.status !== 'ready';
+  for (const id of ['upload-files','upload-folder','new-folder']) $(id).disabled = !storageReady || !folderWritable || busy || uploading;
+  document.querySelectorAll('#files button').forEach(button => {button.disabled = !storageReady || busy || uploading;});
+  document.querySelectorAll('#games button').forEach(button => {button.disabled = !connected || busy;});
+  document.querySelectorAll('#breadcrumbs button').forEach(button=>{button.disabled=!storageReady||busy||button.hasAttribute('aria-current');});
 }
 async function download(target) {
   const result = await api('/api/download', {path: target});
@@ -49,7 +74,7 @@ async function renderDownloads() {
     const active = ['queued', 'starting', 'downloading'].includes(record.status);
     const item = row(record.name, record.status + ' · ' + size + total + ' · ' + record.files + ' files' + (record.error ? ' · ' + record.error : ''),
       active ? 'Cancel' : '', () => api('/api/download/cancel', {id: record.id}));
-    if (record.currentFile && active) {const current = document.createElement('small'); current.textContent = record.currentFile; item.firstChild.append(current);}
+    if (record.currentFile && active) {const current = document.createElement('small'); current.setAttribute('translate','no'); current.textContent = record.currentFile; item.firstChild.append(current);}
     $('download-items').append(item);
   }
 }
@@ -111,8 +136,11 @@ async function uploadFiles(files) {
     $('upload-detail').textContent = error.message; throw error;
   } finally {uploading = false; $('upload-cancel').disabled = true; await browse(base);}
 }
-async function browse(target = '/') {
+async function browse(target = '/', {record = true, index} = {}) {
   const result = await api('/api/browse', {path: target}); cwd = result.cwd;
+  if(record && folderHistory[historyIndex] !== cwd){folderHistory=folderHistory.slice(0,historyIndex+1);folderHistory.push(cwd);historyIndex=folderHistory.length-1;}
+  else if(Number.isInteger(index))historyIndex=index;
+  renderBreadcrumbs();
   sessionStorage.setItem('storagePath', cwd); $('path').textContent = cwd; $('files').replaceChildren();
   $('download-folder').disabled = false; folderWritable = result.writable === true;
   for (const id of ['upload-files', 'upload-folder', 'new-folder']) $(id).disabled = !folderWritable || uploading;
@@ -132,8 +160,18 @@ async function browse(target = '/') {
   }
   if (!result.entries.length) $('files').append(row('This folder is empty', '', '', null));
 }
+function renderBreadcrumbs() {
+  const container=$('breadcrumbs');container.replaceChildren();
+  const parts=cwd.split('/').filter(Boolean),paths=[{name:'Storage',path:'/'}];
+  parts.forEach((name,index)=>paths.push({name,path:'/'+parts.slice(0,index+1).join('/')}));
+  for(const [index,part]of paths.entries()){
+    if(index){const separator=document.createElement('span');separator.textContent='›';separator.setAttribute('aria-hidden','true');container.append(separator);}
+    const button=document.createElement('button');button.textContent=part.name;button.title=part.path;button.disabled=index===paths.length-1;
+    if(button.disabled)button.setAttribute('aria-current','page');button.onclick=()=>action(()=>browse(part.path));container.append(button);
+  }
+}
 function acceptList(result) {
-  connected = true; games = result.games; connectionHost = result.session.host;
+  connected = true; games = result.games; connectionHost = result.session.host; connectionId = result.connection?.id || result.session.id || '';
   if (result.connection) {$('run').value = result.connection.run; $('host').value = result.connection.host;}
   notice('Connected to ' + connectionHost + ' · ' + games.length + ' installed games'); renderGames(); renderStatus();
 }
@@ -142,49 +180,78 @@ async function detect() {
   try {
     const result = await api('/api/detect', {});
     if (result.needsHost) {
-      $('run').value = result.connection.run; $('host').value = result.connection.host || '';
-      connected = false; games = []; renderGames(); $('connection-settings').open = true;
-      notice('Active run folder found. Enter the console IPv4 and click Connect.'); return;
+      $('run').value=result.connection.run; $('host').value=result.connection.host || '';
+      connected=false; games=[]; folderWritable=false; state={status:'idle'}; renderGames(); renderStatus();
+      $('connection-settings').open=true; notice('Active run folder found. Enter the console IPv4 and click Connect.'); return;
     }
-    acceptList(result); $('connection-settings').open = false;
+    state=await api('/api/status');
+    if(state.sessionAvailable===false)throw Error(state.error||'Filesystem service is unavailable.');
+    acceptList(result); $('connection-settings').open=false;
   }
-  catch (error) {$('connection-settings').open = true; throw error;}
+  catch (error) {$('connection-settings').open=true; connected = false; games = []; folderWritable=false;state={...state,status:'unavailable',error:error.message};renderGames(); renderStatus(); throw error;}
 }
 $('detect').onclick = () => action(detect);
 $('connect-form').onsubmit = event => {event.preventDefault(); action(async () => {
   notice('Checking the held endpoint and reading installed games…');
-  acceptList(await api('/api/connect', {run: $('run').value.trim(), host: $('host').value.trim()}));
+  try {
+    const result=await api('/api/connect',{run:$('run').value.trim(),host:$('host').value.trim()});
+    state=await api('/api/status');
+    if(state.sessionAvailable===false)throw Error(state.error||'Filesystem service is unavailable.');
+    acceptList(result); $('connection-settings').open=false;
+  } catch(error) {connected=false;games=[];folderWritable=false;state={status:'unavailable',error:error.message};renderGames();throw error;}
 });};
 $('refresh').onclick = () => action(async () => acceptList(await api('/api/list', {})));
 $('search').oninput = renderGames;
-$('games-tab').onclick = () => {$('games-view').hidden = false; $('storage-view').hidden = true; $('games-tab').classList.add('selected'); $('storage-tab').classList.remove('selected');};
-$('storage-tab').onclick = () => {$('games-view').hidden = true; $('storage-view').hidden = false; $('storage-tab').classList.add('selected'); $('games-tab').classList.remove('selected');};
+function switchFilesView(mode) {
+  sessionStorage.setItem('filesView',mode);
+  for(const value of ['games','storage']){const selected=mode===value,button=$(value+'-tab');$(value+'-view').hidden=!selected;button.classList.toggle('selected',selected);button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;}
+}
+for(const mode of ['games','storage'])$(mode+'-tab').onclick=()=>switchFilesView(mode);
+document.querySelector('.tabs').onkeydown=event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const mode=event.key==='Home'?'games':event.key==='End'?'storage':$('games-view').hidden?'games':'storage';switchFilesView(mode);$(mode+'-tab').focus();};
 $('storage-start').onclick = () => action(async () => {state = await api('/api/start', {mode: 'storage'}); renderStatus();});
 $('download-folder').onclick = () => action(() => download(cwd));
-$('upload-files').onclick = () => $('file-picker').click();
-$('upload-folder').onclick = () => $('folder-picker').click();
+$('upload-files').onclick = () => {$('upload-menu').open=false;$('file-picker').click();};
+$('upload-folder').onclick = () => {$('upload-menu').open=false;$('folder-picker').click();};
 for (const id of ['file-picker', 'folder-picker']) $(id).onchange = () => {const files = [...$(id).files]; $(id).value = ''; $('upload-cancel').disabled = false; action(() => uploadFiles(files));};
 $('upload-cancel').onclick = () => {cancelUpload = true; $('upload-detail').textContent = 'Cancelling upload…';};
 $('new-folder').onclick = () => action(async () => {const name = await fileDialog('New folder', 'Create a folder in ' + cwd, ''); if (!name) return; await api('/api/sd/mkdir', {path: cwd + '/' + name, lease: state.lease}); await browse(cwd);});
+$('back').onclick=()=>action(()=>browse(folderHistory[historyIndex-1],{record:false,index:historyIndex-1}));
+$('forward').onclick=()=>action(()=>browse(folderHistory[historyIndex+1],{record:false,index:historyIndex+1}));
+$('upload-menu').querySelector('summary').onclick=event=>{if($('upload-menu').getAttribute('aria-disabled')==='true')event.preventDefault();};
+document.addEventListener('click',event=>{if(!event.target.closest('#upload-menu'))$('upload-menu').open=false;});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('upload-menu').open){$('upload-menu').open=false;$('upload-menu').querySelector('summary').focus();}});
+$('copy-ftp').onclick=()=>action(async()=>{try{await navigator.clipboard.writeText(state.url);notice('FTP address copied.');}catch{notice('Copy this FTP address: '+state.url);}});
 $('up').onclick = () => action(() => browse(cwd.split('/').slice(0, -1).join('/') || '/'));
 $('stop').onclick = () => action(async () => {state = await api('/api/stop', {lease: state.lease}); renderStatus();});
 $('open').onclick = () => action(async () => {await api('/api/open', {manager: $('manager').value, executable: $('executable').value}); notice('Opened in your selected file manager.');});
 async function init() {
   const result = await api('/api/settings');
-  $('run').value = result.settings.run || ''; $('host').value = result.settings.host || '';
+  $('run').value=result.settings.run||''; $('host').value=result.settings.host||'';
+  const blank = document.createElement('option'); blank.value = ''; blank.textContent = 'Choose a file manager'; $('manager').append(blank);
   for (const manager of result.fileManagers) {const option = document.createElement('option'); option.value = manager.id; option.textContent = manager.name; $('manager').append(option);}
-  $('manager').value = result.settings.manager || (result.platform === 'linux' ? 'dolphin' : 'filezilla');
+  $('manager').value = result.settings.manager || '';
   $('executable').value = result.settings.executable || '';
+  const paths=new Map([[$('manager').value,$('executable').value]]);
+  $('manager').onchange=()=>{$('executable').value=paths.get($('manager').value)||'';renderStatus();};
+  $('executable').oninput=()=>{paths.set($('manager').value,$('executable').value);renderStatus();};
   await action(detect);
+  if(sessionStorage.getItem('filesView')==='storage')$('storage-tab').click();
   renderStatus();
 }
 let polling = false;
 setInterval(async () => {
   if (polling) return; polling = true;
   try {
-    state = await api('/api/status'); renderStatus(); await renderDownloads();
-    if (pollError) {pollError = false; notice(connected ? 'Connected to ' + connectionHost : 'Filesystem service is available.');}
-    if (state.mode === 'storage' && state.status === 'ready' && lastStorageLease !== state.lease) {lastStorageLease = state.lease; await browse(sessionStorage.getItem('storagePath') || '/').catch(() => browse('/')); }
-  } catch (error) {pollError = true; notice(error.message);} finally {polling = false;}
+    state = await api('/api/status');
+    if (connected && connectionId && state.sessionId && connectionId !== state.sessionId) {
+      connected = false; games = []; folderWritable = false; lastStorageLease = '';
+      renderGames(); $('files').replaceChildren();
+      notice('The console session changed. Use Detect session to connect again.');
+    }
+    if (state.sessionAvailable === false) {notice(state.error || 'Filesystem service is unavailable.'); connected = false; games = []; folderWritable = false; renderGames(); $('files').replaceChildren();}
+    renderStatus(); await renderDownloads();
+    if (pollError && state.sessionAvailable !== false) {pollError = false; notice(connected ? 'Connected to ' + connectionHost : 'Filesystem service is available. Use Detect session to reconnect.');}
+    if (connected && !busy && state.mode === 'storage' && state.status === 'ready' && lastStorageLease !== state.lease) {lastStorageLease = state.lease; folderHistory=[];historyIndex=-1;await browse(sessionStorage.getItem('storagePath') || '/').catch(() => browse('/')); }
+  } catch (error) {pollError = true; connected = false;state={...state,status:'unavailable',error:error.message};renderStatus(); notice(error.message);} finally {polling = false;}
 }, 1000);
 init().catch(error => notice(error.message));

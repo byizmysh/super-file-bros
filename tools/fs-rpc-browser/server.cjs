@@ -4,7 +4,7 @@ const {saveJson, readJson, redact} = require('../../core/session/ledger.cjs');
 const control = require('../dolphin-fs-rpc/control.cjs');
 const managers = require('./file-managers.cjs');
 const configFile = path.join(root, 'data/state/fs-rpc-browser/connection.json');
-async function create({port = 0, backend = control, openManager = managers.open, discover = require('./discovery.cjs').discover, token = crypto.randomBytes(32).toString('hex')} = {}) {
+async function create({port = 0, backend = control, openManager = managers.open, discover = require('./discovery.cjs').discover, token = crypto.randomBytes(32).toString('hex'), settingsFile = configFile, checkSession = () => require('../dolphin-fs-rpc/library.cjs').findSession(root, undefined, {standalone:true})} = {}) {
   if (!/^[a-f0-9]{64}$/.test(token)) throw Error('Invalid local access key');
   const downloads = require('./downloads.cjs').create({backend});
   let origin;
@@ -24,9 +24,17 @@ async function create({port = 0, backend = control, openManager = managers.open,
       if (req.method === 'GET' && download) return await downloads.send(req, res, download[1]);
       if (req.headers['x-fs-key'] !== token) return reply(res, 403, {error: 'Reopen the tool using its launch link'});
       if (req.method === 'GET' && url.pathname === '/api/settings') return reply(res, 200, {
-        settings: await readJson(configFile, {}), platform: process.platform, fileManagers: managers.presets(), version: require('./brand.cjs').version, name: require('./brand.cjs').name});
+        settings: await readJson(settingsFile, {}), platform: process.platform, fileManagers: managers.presets(), version: require('./brand.cjs').version, name: require('./brand.cjs').name});
       if (req.method === 'GET' && url.pathname === '/api/downloads') return reply(res, 200, downloads.list());
-      if (req.method === 'GET' && url.pathname === '/api/status') return reply(res, 200, await backend.request('status'));
+      if (req.method === 'GET' && url.pathname === '/api/status') {
+        let session;
+        try {session=await checkSession();}
+        catch(error) {return reply(res,200,{status:'unavailable',sessionAvailable:false,error:redact(error.message)});}
+        const status=await backend.request('status');
+        if(status.session && status.session!==session.session)
+          return reply(res,200,{status:'idle',sessionAvailable:true,sessionId:session.id,progress:'Choose a new export for the current console session.'});
+        return reply(res,200,{...status,sessionAvailable:true,sessionId:session.id});
+      }
       if (req.method !== 'POST') return reply(res, 404, {error: 'Not found'});
       if (req.headers.origin !== origin) return reply(res, 403, {error: 'The request must come from this tool'});
       let size = 0, body = '';
@@ -34,13 +42,13 @@ async function create({port = 0, backend = control, openManager = managers.open,
       const data = JSON.parse(body || '{}');
       let result;
       if (url.pathname === '/api/detect') {
-        const previous = await readJson(configFile, {});
+        const previous = await readJson(settingsFile, {});
         const detected = await discover({root, settings: previous});
         if (!net.isIPv4(detected.host || '')) result = {connection: detected, needsHost: true};
         else {
           if (previous.run !== detected.run || previous.host !== detected.host) {
             await backend.request('stop');
-            await saveJson(configFile, {...previous, run: detected.run, host: detected.host});
+            await saveJson(settingsFile, {...previous, run: detected.run, host: detected.host});
           }
           result = {...await backend.request('list'), connection: detected};
         }
@@ -48,9 +56,9 @@ async function create({port = 0, backend = control, openManager = managers.open,
         if (!path.isAbsolute(data.run || '') || !net.isIPv4(data.host || '')) throw Error('Enter an absolute held FS run folder and console IPv4');
         const run = await fs.realpath(data.run);
         await fs.access(path.join(run, 'switch2/fs-execution-current.json'));
-        const previous = await readJson(configFile, {});
+        const previous = await readJson(settingsFile, {});
         await backend.request('stop');
-        await saveJson(configFile, {...previous, run, host: data.host});
+        await saveJson(settingsFile, {...previous, run, host: data.host});
         result = await backend.request('list', {refresh: true});
       } else if (url.pathname === '/api/list') result = await backend.request('list', {refresh: true});
       else if (url.pathname === '/api/start') result = await backend.request(data.mode === 'storage' ? 'start-storage' : 'start', {title: data.title});
@@ -62,9 +70,9 @@ async function create({port = 0, backend = control, openManager = managers.open,
       else if (url.pathname === '/api/open') {
         const state = await backend.request('status');
         if (state.status !== 'ready') throw Error('Start a filesystem export first');
-        const settings = await readJson(configFile, {});
+        const settings = await readJson(settingsFile, {});
         result = await openManager({url: state.url, manager: data.manager, executable: data.executable || ''});
-        await saveJson(configFile, {...settings, manager: data.manager, executable: data.executable || ''});
+        await saveJson(settingsFile, {...settings, manager: data.manager, executable: data.executable || ''});
       } else return reply(res, 404, {error: 'Unknown action'});
       reply(res, 200, result);
     } catch (error) {reply(res, 400, {error: redact(error.message).slice(0, 1200)});}

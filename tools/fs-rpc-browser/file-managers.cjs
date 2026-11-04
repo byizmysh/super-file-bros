@@ -3,8 +3,9 @@ const net = require('node:net');
 const fs = require('node:fs');
 function presets(platform = process.platform) {
   const items = [{id: 'filezilla', name: 'FileZilla', executable: platform === 'win32' ? 'filezilla.exe' : platform === 'darwin' ? '/Applications/FileZilla.app/Contents/MacOS/filezilla' : 'filezilla'}];
+  if (platform === 'win32') items.unshift({id:'explorer',name:'Windows File Explorer · FTP',executable:'explorer.exe'});
   if (platform === 'linux') items.push(...['dolphin', 'nautilus', 'nemo', 'thunar'].map(id => ({id, name: id[0].toUpperCase() + id.slice(1), executable: id})));
-  if (platform === 'darwin') items.push({id: 'finder', name: 'Finder', executable: '/usr/bin/open'});
+  if (platform === 'darwin') items.unshift({id: 'finder', name: 'Finder · FTP (read-only)', executable: '/usr/bin/open'});
   items.push({id: 'system', name: 'System FTP handler', executable: ''}, {id: 'custom', name: 'Custom file manager', executable: ''});
   return items;
 }
@@ -14,6 +15,7 @@ function command({manager = 'filezilla', executable = '', url}, platform = proce
     throw Error('Expected an anonymous FTP URL for the selected console');
   const preset = presets(platform).find(item => item.id === manager);
   if (!preset) throw Error('Unknown file manager');
+  if (manager === 'explorer') return ['explorer.exe',[target.href]];
   if (manager === 'system') {
     if (platform === 'win32') return ['rundll32.exe', ['url.dll,FileProtocolHandler', target.href]];
     return [platform === 'darwin' ? '/usr/bin/open' : 'xdg-open', [target.href]];
