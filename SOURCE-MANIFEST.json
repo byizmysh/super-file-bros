@@ -51,7 +51,7 @@
     "tests/fs-rpc-discovery.test.cjs": "073fcf4b79012a77971cb4de9614758603fb6d1ba66820a8c77babd80d3975c7",
     "tests/fs-rpc-downloads.test.cjs": "c49238020b389d0102c6572faaabb671f89607b3bcd9348a1520c02572f0d077",
     "tests/fs-rpc-writes.test.cjs": "9448c91038b7263b00d57414ff261d9ad59f7289200a13e7a138973f2c182f42",
-    "tests/super-file-bros-bootstrap.test.cjs": "2003fda5ff52a20153542b3f435eef0fb22463671004cdf5f3d3dc30df2bb990",
+    "tests/super-file-bros-bootstrap.test.cjs": "29d641f938079e1f0d73a30528256ffa03b7ee79a466eaf2cfaed9638497616b",
     "tests/super-file-bros-release.test.cjs": "0cfdbace9e7647be0c069df754daf165317796211ca98855c933bdf6916edd20",
     "tools/dolphin-fs-rpc/control.cjs": "705172204cec7cebff74fc50f7e98aff442a84eb6089761246c145ced9b03fd8",
     "tools/dolphin-fs-rpc/ftp-client.cjs": "45ca822ef5f95cefe06829fb6bf8d5a31ca0389ec5b8c916c8e40e78b6023eda",

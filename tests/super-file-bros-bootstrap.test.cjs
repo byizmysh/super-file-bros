@@ -90,8 +90,9 @@ $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvar
 if ($env:SFB_BAD_CHECKSUM -eq '1') { $hash = '0' * 64 }
 Set-Content -LiteralPath (Join-Path $tools 'node-runtimes.tsv') -Value ("version\ttarget\tsha256\n22.23.4\t" + $target + "\t" + $hash)
 function Get-Command { param($Name, $CommandType, $ErrorAction) if ($Name -ne 'node.exe') { Microsoft.PowerShell.Core\\Get-Command @PSBoundParameters } }
-function Invoke-WebRequest { param([switch]$UseBasicParsing, $Uri, $OutFile) if ($env:SFB_OFFLINE -eq '1') { throw 'Unexpected download' }; Add-Content -LiteralPath (Join-Path $env:SFB_FIXTURE_TEMP 'downloads') -Value 'download'; Copy-Item -LiteralPath $archive -Destination $OutFile }
+function Invoke-WebRequest { param([switch]$UseBasicParsing, $Uri, $OutFile) if ($env:SFB_OFFLINE -eq '1') { throw 'Unexpected download' }; Add-Content -LiteralPath (Join-Path $env:SFB_FIXTURE_TEMP 'downloads') -Value 'download'; Copy-Item -LiteralPath (Join-Path $env:SFB_FIXTURE_TEMP 'node.zip') -Destination $OutFile }
 & (Join-Path $tools 'bootstrap.ps1') start --help 'spaces & 100%'
+exit $LASTEXITCODE
 `);
   const env = {...process.env,SFB_FIXTURE_APP:app,SFB_FIXTURE_TEMP:temporary,SFB_FIXTURE_NODE:process.execPath};
   const run = extra => spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',harness],{env:{...env,...extra},encoding:'utf8',timeout:120000});
